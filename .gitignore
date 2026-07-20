@@ -16,3 +16,4 @@ lambda/**/*.zip
 # Personal Claude overrides (not shared)
 CLAUDE.local.md
 .claude/settings.local.json
+*.tfplan
