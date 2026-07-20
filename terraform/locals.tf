@@ -28,7 +28,7 @@ locals {
     # replacing xomify's homegrown HS256 API_SECRET_KEY scheme.
     COGNITO_USER_POOL_ID = data.aws_ssm_parameter.cognito_user_pool_id.value
     COGNITO_JWKS_URL     = data.aws_ssm_parameter.cognito_user_pool_jwks_url.value
-    COGNITO_CLIENT_ID    = aws_cognito_user_pool_client.xomforms.id
+    COGNITO_CLIENT_ID    = data.aws_ssm_parameter.cognito_client_xomforms_id.value
   }
 
   # API Gateway allowed headers
