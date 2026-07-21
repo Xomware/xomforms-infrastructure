@@ -9,9 +9,11 @@ resource "aws_api_gateway_account" "api_gateway_account" {
 #**********************
 
 locals {
-  # `authorization` is carried through per-endpoint so the module skips the
-  # custom Lambda authorizer (NONE) for public routes rather than
-  # inheriting the module-level default (CUSTOM).
+  # `authorization` is carried through per-endpoint so the module can mix
+  # auth types on one API: public routes stay NONE while authed routes use
+  # the native COGNITO_USER_POOLS authorizer (see lambda.tf). The
+  # module-level default is COGNITO_USER_POOLS (set on the module block
+  # below); NONE endpoints override it.
   polls_endpoints = [
     for l in local.polls_lambdas : {
       name          = l.name
@@ -46,13 +48,15 @@ locals {
 module "api" {
   source = "git::https://github.com/domgiordano/api-gateway-service.git?ref=v2.7.0"
 
-  app_name              = var.app_name
-  stage_name            = var.api_stage_name
-  authorizer_invoke_arn = aws_lambda_function.authorizer.invoke_arn
-  authorizer_role_arn   = aws_iam_role.apigw_authorizer_invoke.arn
-  tags                  = local.standard_tags
-  allow_headers         = local.api_allow_headers
-  allow_origin          = var.cors_allowed_origins
+  app_name      = var.app_name
+  stage_name    = var.api_stage_name
+  authorization = "COGNITO_USER_POOLS"
+  cognito_user_pool_arns = [
+    data.aws_ssm_parameter.cognito_user_pool_arn.value
+  ]
+  tags          = local.standard_tags
+  allow_headers = local.api_allow_headers
+  allow_origin  = var.cors_allowed_origins
 
   # Custom domain
   domain_name     = local.api_domain_name

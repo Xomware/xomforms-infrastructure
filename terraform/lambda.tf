@@ -1,10 +1,11 @@
 ########################################
 # Xomforms API Lambdas -- one per handler in xomforms-backend/lambdas/.
 #
-# `authorization` on an endpoint is carried through to api_gateway.tf so
-# the api-gateway-service module can override the module-level default
-# (CUSTOM) to NONE for public routes -- same pattern as xomify's
-# music_lambdas (see lambdas_music.tf there).
+# `authorization` on an endpoint is carried through to api_gateway.tf.
+# Authed routes use the native COGNITO_USER_POOLS authorizer (validated
+# directly by API Gateway against the shared xomware_users pool -- see
+# data_cognito.tf and the module block in api_gateway.tf, matching
+# meals-infrastructure). Public routes override to NONE.
 #
 # THREE public routes, not one, as the original plan phrasing said ("one
 # public route for guest submit and poll read"). Flagged for Dom's review
@@ -14,7 +15,7 @@
 #   3. results/get-public     -- NEW, discovered during infra design
 #
 # Why #3 exists: a NONE-authorization API Gateway route never invokes the
-# custom authorizer at all -- requestContext.authorizer is simply absent,
+# Cognito authorizer at all -- requestContext.authorizer is simply absent,
 # regardless of whether the caller sent a valid token. That means a single
 # results/get route CANNOT distinguish "the creator" from "a guest" while
 # also being reachable by guests, which showResultsToRespondents=true is
@@ -27,7 +28,7 @@
 #   - results/get-public  (NONE)  -- respondent-facing view (guests
 #     included), allowed only when showResultsToRespondents=true
 # This avoids duplicating JWT/JWKS verification logic inside a handler,
-# which the CUSTOM authorizer already owns.
+# which the COGNITO_USER_POOLS authorizer already owns.
 ########################################
 
 locals {
@@ -37,7 +38,7 @@ locals {
       description   = "Creator builds a schedule poll (authed)"
       path_part     = "create"
       http_method   = "POST"
-      authorization = "CUSTOM"
+      authorization = "COGNITO_USER_POOLS"
     },
     {
       name          = "get"
@@ -51,7 +52,7 @@ locals {
       description   = "\"My polls\" via creator GSI (authed)"
       path_part     = "list"
       http_method   = "GET"
-      authorization = "CUSTOM"
+      authorization = "COGNITO_USER_POOLS"
     },
   ]
 
@@ -61,7 +62,7 @@ locals {
       description   = "Authed respondent upsert, keyed by email"
       path_part     = "submit"
       http_method   = "POST"
-      authorization = "CUSTOM"
+      authorization = "COGNITO_USER_POOLS"
     },
     {
       name          = "submit-guest"
@@ -87,7 +88,7 @@ locals {
       description   = "Creator's own results view -- always allowed for the poll's creatorEmail, 403 for anyone else"
       path_part     = "get"
       http_method   = "GET"
-      authorization = "CUSTOM"
+      authorization = "COGNITO_USER_POOLS"
     },
     {
       name          = "get-public"
