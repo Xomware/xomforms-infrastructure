@@ -92,5 +92,14 @@ resource "aws_dynamodb_table" "responses" {
     projection_type = "ALL"
   }
 
+  # Declared explicitly as disabled rather than simply deleting the block.
+  # The provider treats an omitted ttl block as "no change" against a table
+  # that already has TTL enabled, so removing it silently leaves expiry live
+  # -- responses would keep vanishing at close and the plan would show nothing.
+  ttl {
+    attribute_name = ""
+    enabled        = false
+  }
+
   tags = merge(local.standard_tags, tomap({ "name" = "${var.app_name}-responses" }))
 }
