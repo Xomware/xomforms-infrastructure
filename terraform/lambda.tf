@@ -54,6 +54,22 @@ locals {
       http_method   = "GET"
       authorization = "COGNITO_USER_POOLS"
     },
+    # POST (not DELETE/PATCH) to match /polls/create and keep every mutating
+    # route on one verb through the shared api-gateway-service module.
+    {
+      name          = "delete"
+      description   = "Creator deletes a form + cascades its responses (authed)"
+      path_part     = "delete"
+      http_method   = "POST"
+      authorization = "COGNITO_USER_POOLS"
+    },
+    {
+      name          = "close"
+      description   = "Creator closes or reopens a form via closeAt (authed)"
+      path_part     = "close"
+      http_method   = "POST"
+      authorization = "COGNITO_USER_POOLS"
+    },
   ]
 
   responses_lambdas = [
