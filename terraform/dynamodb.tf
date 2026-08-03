@@ -96,8 +96,13 @@ resource "aws_dynamodb_table" "responses" {
   # The provider treats an omitted ttl block as "no change" against a table
   # that already has TTL enabled, so removing it silently leaves expiry live
   # -- responses would keep vanishing at close and the plan would show nothing.
+  #
+  # attribute_name must still NAME the attribute even when disabling:
+  # DynamoDB's UpdateTimeToLive rejects an empty attributeName outright
+  # ("Member must have length greater than or equal to 1"), so blanking it
+  # fails the apply rather than turning expiry off.
   ttl {
-    attribute_name = ""
+    attribute_name = "closeAt"
     enabled        = false
   }
 
