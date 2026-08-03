@@ -120,6 +120,32 @@ data "aws_iam_policy_document" "lambda_role_policy" {
       "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.web_app_account.account_id}:table/${var.app_name}*/index/*"
     ]
   }
+
+  # SES -- form-invite sends (see lambdas/invites_send). Scoped to the verified
+  # xomforms identity and its configuration set, NOT ses:* on "*": a leaked or
+  # buggy lambda must not be able to send as any other identity in the account.
+  statement {
+    effect = "Allow"
+    actions = [
+      "ses:SendEmail"
+    ]
+    resources = [
+      "arn:aws:ses:${var.aws_region}:${data.aws_caller_identity.web_app_account.account_id}:identity/${local.ses_domain}",
+      "arn:aws:ses:${var.aws_region}:${data.aws_caller_identity.web_app_account.account_id}:configuration-set/${aws_sesv2_configuration_set.xomforms.configuration_set_name}"
+    ]
+  }
+
+  # Read the SES from-address + configuration-set names written by ses.tf.
+  statement {
+    effect = "Allow"
+    actions = [
+      "ssm:GetParameter",
+      "ssm:GetParameters"
+    ]
+    resources = [
+      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.web_app_account.account_id}:parameter/${var.app_name}/ses/*"
+    ]
+  }
 }
 
 resource "aws_iam_role_policy" "lambda_role_policy" {

@@ -70,6 +70,30 @@ locals {
       http_method   = "POST"
       authorization = "COGNITO_USER_POOLS"
     },
+    {
+      name          = "update"
+      description   = "Creator edits form settings -- edits allowed, results visibility (authed)"
+      path_part     = "update"
+      http_method   = "POST"
+      authorization = "COGNITO_USER_POOLS"
+    },
+  ]
+
+  invites_lambdas = [
+    {
+      name          = "send"
+      description   = "Creator emails form invites via SES (authed)"
+      path_part     = "send"
+      http_method   = "POST"
+      authorization = "COGNITO_USER_POOLS"
+    },
+    {
+      name          = "list"
+      description   = "Creator reads invite recipients + delivery status (authed)"
+      path_part     = "list"
+      http_method   = "GET"
+      authorization = "COGNITO_USER_POOLS"
+    },
   ]
 
   responses_lambdas = [
@@ -86,6 +110,30 @@ locals {
       path_part     = "submit-guest"
       http_method   = "POST"
       authorization = "NONE"
+    },
+    {
+      name          = "mine"
+      description   = "Forms the caller has responded to, via respondentKey GSI (authed)"
+      path_part     = "mine"
+      http_method   = "GET"
+      authorization = "COGNITO_USER_POOLS"
+    },
+    {
+      # NONE so a guest can prefill/edit their own answer using the guestId
+      # held in their browser. The handler still requires either a Cognito
+      # identity or a matching guestId -- it never returns anyone else's row.
+      name          = "get-mine"
+      description   = "The caller's own response to one form, for prefill/edit"
+      path_part     = "get-mine"
+      http_method   = "GET"
+      authorization = "NONE"
+    },
+    {
+      name          = "claim"
+      description   = "Re-key this browser's guest responses onto the signed-in account"
+      path_part     = "claim"
+      http_method   = "POST"
+      authorization = "COGNITO_USER_POOLS"
     },
   ]
 
@@ -214,6 +262,47 @@ resource "aws_lambda_function" "results" {
   }
 
   tags = merge(local.standard_tags, tomap({ "name" = "${var.app_name}-results-${each.value.name}", "lambda_type" = "results" }))
+
+  lifecycle {
+    ignore_changes = [
+      description,
+      filename,
+      source_code_hash,
+      layers
+    ]
+  }
+
+  depends_on = [
+    aws_iam_role_policy.lambda_role_policy,
+    aws_iam_role.lambda_role
+  ]
+}
+
+#**********************
+# Invites Lambdas
+#**********************
+resource "aws_lambda_function" "invites" {
+  for_each         = { for lambda in local.invites_lambdas : lambda.name => lambda }
+  function_name    = "${var.app_name}-invites-${each.value.name}"
+  description      = each.value.description
+  filename         = "./templates/lambda_stub.zip"
+  source_code_hash = filebase64sha256("./templates/lambda_stub.zip")
+  handler          = "handler.handler"
+  layers           = [aws_lambda_layer_version.lambda_layer.arn]
+  runtime          = var.lambda_runtime
+  memory_size      = var.lambda_memory_size
+  timeout          = var.lambda_timeout
+  role             = aws_iam_role.lambda_role.arn
+
+  environment {
+    variables = local.lambda_variables
+  }
+
+  tracing_config {
+    mode = var.lambda_trace_mode
+  }
+
+  tags = merge(local.standard_tags, tomap({ "name" = "${var.app_name}-invites-${each.value.name}", "lambda_type" = "invites" }))
 
   lifecycle {
     ignore_changes = [

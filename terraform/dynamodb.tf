@@ -49,8 +49,14 @@ resource "aws_dynamodb_table" "polls" {
 # 2. xomforms-responses
 # PK: pollId
 # SK: respondentKey (email, or "guest#<uuid>")
-# TTL: closeAt (epoch seconds, denormalized from the poll at submit time --
-# see lambdas/common/responses_dynamo.py::upsert_response)
+# GSI respondentKey-pollId-index: PK respondentKey, SK pollId -- powers
+# "forms I filled out" on the dashboard, and the guest->account claim.
+#
+# NO TTL. Responses used to carry the poll's closeAt as a TTL attribute, so
+# DynamoDB reaped them once a form closed. That was fine while responses were
+# write-only, but participation history is now a product feature: respondents
+# see the forms they answered and can edit their own response. Storage that
+# garbage-collects itself cannot back either of those.
 ########################################
 resource "aws_dynamodb_table" "responses" {
   name           = "${var.app_name}-responses"
@@ -79,9 +85,11 @@ resource "aws_dynamodb_table" "responses" {
     type = "S"
   }
 
-  ttl {
-    attribute_name = "closeAt"
-    enabled        = true
+  global_secondary_index {
+    name            = "respondentKey-pollId-index"
+    hash_key        = "respondentKey"
+    range_key       = "pollId"
+    projection_type = "ALL"
   }
 
   tags = merge(local.standard_tags, tomap({ "name" = "${var.app_name}-responses" }))
