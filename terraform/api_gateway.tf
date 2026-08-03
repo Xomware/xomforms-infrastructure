@@ -43,6 +43,16 @@ locals {
       authorization = l.authorization
     }
   ]
+
+  invites_endpoints = [
+    for l in local.invites_lambdas : {
+      name          = l.name
+      path_part     = l.path_part
+      http_method   = l.http_method
+      invoke_arn    = aws_lambda_function.invites[l.name].invoke_arn
+      authorization = l.authorization
+    }
+  ]
 }
 
 module "api" {
@@ -66,5 +76,6 @@ module "api" {
     polls     = { path_prefix = "polls", endpoints = local.polls_endpoints }
     responses = { path_prefix = "responses", endpoints = local.responses_endpoints }
     results   = { path_prefix = "results", endpoints = local.results_endpoints }
+    invites   = { path_prefix = "invites", endpoints = local.invites_endpoints }
   }
 }
