@@ -77,6 +77,23 @@ locals {
       http_method   = "POST"
       authorization = "COGNITO_USER_POOLS"
     },
+    {
+      name          = "finalize"
+      description   = "Creator picks the winning time, closes the form, notifies respondents (authed)"
+      path_part     = "finalize"
+      http_method   = "POST"
+      authorization = "COGNITO_USER_POOLS"
+    },
+    {
+      # PUBLIC by design: this is the "add to calendar" link inside a
+      # notification email, which has to open straight from a mail client
+      # with no session. It leaks only what the recipient was already told.
+      name          = "ics"
+      description   = "Calendar file for a finalized form (public)"
+      path_part     = "ics"
+      http_method   = "GET"
+      authorization = "NONE"
+    },
   ]
 
   invites_lambdas = [
@@ -143,6 +160,13 @@ locals {
       description   = "Re-key this browser's guest responses onto the signed-in account"
       path_part     = "claim"
       http_method   = "POST"
+      authorization = "COGNITO_USER_POOLS"
+    },
+    {
+      name          = "list"
+      description   = "Creator sees who responded, with contact details (authed)"
+      path_part     = "list"
+      http_method   = "GET"
       authorization = "COGNITO_USER_POOLS"
     },
   ]
