@@ -21,6 +21,7 @@ locals {
     POLLS_TABLE_NAME     = aws_dynamodb_table.polls.id
     RESPONSES_TABLE_NAME = aws_dynamodb_table.responses.id
     POLLS_CREATOR_INDEX  = "creatorEmail-createdAt-index"
+    PLACE_INDEX_NAME     = aws_location_place_index.places.index_name
     AWS_ACCOUNT_ID       = data.aws_caller_identity.web_app_account.account_id
 
     # Shared Cognito pool (see data_cognito.tf) -- the ported authorizer

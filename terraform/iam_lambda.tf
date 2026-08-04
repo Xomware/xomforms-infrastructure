@@ -135,6 +135,19 @@ data "aws_iam_policy_document" "lambda_role_policy" {
     ]
   }
 
+  # Amazon Location -- address autocomplete, scoped to this app's index only.
+  statement {
+    effect = "Allow"
+    actions = [
+      "geo:SearchPlaceIndexForText",
+      "geo:SearchPlaceIndexForSuggestions",
+      "geo:GetPlace"
+    ]
+    resources = [
+      aws_location_place_index.places.index_arn
+    ]
+  }
+
   # Read the SES from-address + configuration-set names written by ses.tf.
   statement {
     effect = "Allow"
