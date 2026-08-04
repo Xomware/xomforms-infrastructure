@@ -111,6 +111,17 @@ locals {
       http_method   = "GET"
       authorization = "COGNITO_USER_POOLS"
     },
+    {
+      # PUBLIC by design: an invite recipient has no account, and this is what
+      # lets their form prefill from the link they were emailed. Takes an
+      # opaque per-recipient token, so it discloses only the address of
+      # whoever already holds that token.
+      name          = "resolve"
+      description   = "Resolve an invite token to its recipient, for prefill (public)"
+      path_part     = "resolve"
+      http_method   = "GET"
+      authorization = "NONE"
+    },
   ]
 
   places_lambdas = [
