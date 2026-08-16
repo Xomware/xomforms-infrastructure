@@ -4,11 +4,12 @@
 # GSI creatorEmail-createdAt-index: PK creatorEmail, SK createdAt -- "my polls"
 ########################################
 resource "aws_dynamodb_table" "polls" {
-  name           = "${var.app_name}-polls"
-  billing_mode   = "PAY_PER_REQUEST"
-  read_capacity  = 0
-  write_capacity = 0
-  hash_key       = "pollId"
+  deletion_protection_enabled = true
+  name                        = "${var.app_name}-polls"
+  billing_mode                = "PAY_PER_REQUEST"
+  read_capacity               = 0
+  write_capacity              = 0
+  hash_key                    = "pollId"
 
   server_side_encryption {
     enabled     = true
@@ -59,12 +60,13 @@ resource "aws_dynamodb_table" "polls" {
 # garbage-collects itself cannot back either of those.
 ########################################
 resource "aws_dynamodb_table" "responses" {
-  name           = "${var.app_name}-responses"
-  billing_mode   = "PAY_PER_REQUEST"
-  read_capacity  = 0
-  write_capacity = 0
-  hash_key       = "pollId"
-  range_key      = "respondentKey"
+  deletion_protection_enabled = true
+  name                        = "${var.app_name}-responses"
+  billing_mode                = "PAY_PER_REQUEST"
+  read_capacity               = 0
+  write_capacity              = 0
+  hash_key                    = "pollId"
+  range_key                   = "respondentKey"
 
   server_side_encryption {
     enabled     = true
