@@ -156,3 +156,32 @@ resource "aws_iam_role_policy" "terraform_plan_state_lock" {
   role   = aws_iam_role.terraform_plan.id
   policy = data.aws_iam_policy_document.terraform_plan_state_lock.json
 }
+
+# AWS's managed ReadOnlyAccess does not cover Amazon Location, so a plan could
+# not refresh `aws_location_place_index.places` and aborted mid-refresh with an
+# AccessDeniedException on `geo:DescribePlaceIndex`. Terraform exited 1 before
+# reaching most of the module, so the plan it printed was a partial one that
+# looked clean — the worst shape for a failure to take, since the summary is
+# believable and wrong.
+#
+# Read-only, and scoped to this app's own index rather than "*".
+data "aws_iam_policy_document" "terraform_plan_place_index" {
+  statement {
+    sid    = "ReadPlaceIndex"
+    effect = "Allow"
+    actions = [
+      "geo:DescribePlaceIndex",
+      "geo:ListPlaceIndexes",
+      "geo:ListTagsForResource",
+    ]
+    resources = [
+      "arn:aws:geo:${var.aws_region}:${data.aws_caller_identity.web_app_account.account_id}:place-index/${var.app_name}-places",
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "terraform_plan_place_index" {
+  name   = "read-place-index"
+  role   = aws_iam_role.terraform_plan.id
+  policy = data.aws_iam_policy_document.terraform_plan_place_index.json
+}
